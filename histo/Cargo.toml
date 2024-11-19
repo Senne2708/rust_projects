@@ -1,0 +1,10 @@
+[package]
+name = "histo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+image = "0.25.5"
+walkdir = "2.3.2"
+plotters = "0.3"
+rayon = "1.5"  # Add Rayon crate for parallelism
