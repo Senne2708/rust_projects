@@ -1,2 +1,5 @@
 # Ignore targets
 target/
+
+# Ignore database
+*.db

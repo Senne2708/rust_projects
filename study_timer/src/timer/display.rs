@@ -1,13 +1,13 @@
 // src/timer/display.rs
-use std::io::{self, Write, stdout};
-use std::time::Duration;
 use crossterm::{
+    cursor,
     event::{self, Event, KeyCode},
     execute,
-    terminal::{self, ClearType},
-    cursor,
     style::{self, Attribute, SetAttribute},
+    terminal::{self, ClearType},
 };
+use std::io::{self, stdout, Write};
+use std::time::Duration;
 
 pub struct DisplayManager {
     stdout: io::Stdout,
@@ -21,11 +21,15 @@ impl DisplayManager {
     pub fn select_duration(&self) -> io::Result<Duration> {
         let options = ["1 hr", "2 hr", "3 hr", "4 hr", "Exit"];
         let mut selected = 0;
-        
+
         loop {
             let (width, height) = terminal::size()?;
-            execute!(self.stdout.lock(), terminal::Clear(ClearType::All), cursor::MoveTo(0, 0))?;
-            
+            execute!(
+                self.stdout.lock(),
+                terminal::Clear(ClearType::All),
+                cursor::MoveTo(0, 0)
+            )?;
+
             self.draw_menu(&options, selected, width, height)?;
 
             if let Event::Key(key_event) = event::read()? {
@@ -38,18 +42,18 @@ impl DisplayManager {
                     }
                     KeyCode::Enter => {
                         return Ok(match selected {
-                            0 => Duration::from_secs(5),   
+                            0 => Duration::from_secs(5),
                             1 => Duration::from_secs(2 * 60 * 60),
                             2 => Duration::from_secs(3 * 60 * 60),
                             3 => Duration::from_secs(4 * 60 * 60),
                             4 => std::process::exit(0),
-                            _ => unreachable!()
+                            _ => unreachable!(),
                         });
                     }
                     KeyCode::Esc => {
                         self.stdout.lock().flush()?;
                         std::process::exit(0)
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -73,53 +77,59 @@ impl DisplayManager {
         let seconds = remaining.as_secs() % 60;
 
         let (width, height) = terminal::size()?;
-        
+
         self.draw_ascii_art(width, height)?;
 
         let ascii_height = 19;
         let timer_y = height / 2 - ascii_height + ascii_height + 2;
 
         let mut stdout = self.stdout.lock();
-        
+
         execute!(
-            stdout, 
-            cursor::MoveTo(width/2 - 8, timer_y), 
+            stdout,
+            cursor::MoveTo(width / 2 - 8, timer_y),
             terminal::Clear(ClearType::CurrentLine)
         )?;
         print!("Time Remaining:");
 
         execute!(
-            stdout, 
-            cursor::MoveTo(width/2 -4, timer_y + 1), 
+            stdout,
+            cursor::MoveTo(width / 2 - 4, timer_y + 1),
             terminal::Clear(ClearType::CurrentLine)
         )?;
 
         print!("{:02}:{:02}:{:02}", hours, minutes, seconds);
         stdout.flush()?;
-        
+
         Ok(())
     }
 
     pub fn show_finished_message(&self) -> io::Result<()> {
         let (width, height) = terminal::size()?;
-        let center_x = width / 2 - 15; 
+        let center_x = width / 2 - 15;
         let center_y = height / 2;
 
         execute!(
-            self.stdout.lock(), 
-            cursor::MoveTo(center_x + 8, center_y), 
+            self.stdout.lock(),
+            cursor::MoveTo(center_x + 8, center_y),
             terminal::Clear(ClearType::CurrentLine)
         )?;
         println!("Timer Finished!");
-        
+
         Ok(())
     }
 
     // Private helper methods
-    fn draw_menu(&self, options: &[&str], selected: usize, width: u16, height: u16) -> io::Result<()> {
+    fn draw_menu(
+        &self,
+        options: &[&str],
+        selected: usize,
+        width: u16,
+        height: u16,
+    ) -> io::Result<()> {
         let title = "Select Timer Duration";
         let divider = "-------------------";
-        
+
         let title_x = (width as usize - title.len()) / 2;
         let divider_x = (width as usize - divider.len()) / 2;
         let menu_x = (width as usize - 20) / 2;
@@ -129,13 +139,16 @@ impl DisplayManager {
 
         execute!(stdout, cursor::MoveTo(title_x as u16, menu_y as u16 - 2))?;
         print!("{}", title);
-        
+
         execute!(stdout, cursor::MoveTo(divider_x as u16, menu_y as u16 - 1))?;
         print!("{}", divider);
 
         for (index, &option) in options.iter().enumerate() {
-            execute!(stdout, cursor::MoveTo(menu_x as u16, (menu_y + index) as u16))?;
-            
+            execute!(
+                stdout,
+                cursor::MoveTo(menu_x as u16, (menu_y + index) as u16)
+            )?;
+
             if index == selected {
                 execute!(stdout, SetAttribute(Attribute::Reverse))?;
                 print!("{:^20}", option);
@@ -143,9 +156,12 @@ impl DisplayManager {
             } else {
                 print!("{:^20}", option);
             }
-            execute!(stdout, cursor::MoveTo(menu_x as u16, (menu_y + index + 1) as u16))?;
+            execute!(
+                stdout,
+                cursor::MoveTo(menu_x as u16, (menu_y + index + 1) as u16)
+            )?;
         }
-        
+
         Ok(())
     }
 
@@ -178,18 +194,22 @@ impl DisplayManager {
         let center_y = height / 2;
 
         let mut stdout = self.stdout.lock();
-        execute!(stdout, cursor::MoveTo(center_x, center_y - ascii_height), terminal::Clear(ClearType::All))?;
+        execute!(
+            stdout,
+            cursor::MoveTo(center_x, center_y - ascii_height),
+            terminal::Clear(ClearType::All)
+        )?;
 
         for (i, line) in ascii_art.iter().enumerate() {
             execute!(
-                stdout, 
+                stdout,
                 cursor::MoveTo(center_x, center_y - ascii_height + i as u16),
                 SetAttribute(Attribute::Bold),
                 crossterm::style::SetForegroundColor(style::Color::Magenta)
             )?;
             writeln!(stdout, "{}", line)?;
         }
-        
+
         Ok(())
     }
 }
