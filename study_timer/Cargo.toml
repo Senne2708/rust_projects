@@ -8,5 +8,6 @@ crossterm = "0.27.0"
 rodio = "0.17.1"
 rusqlite = { version = "0.30", features = ["bundled"] }
 chrono = "0.4"
+textwrap = "0.16.1"
 # active-win-pos-rs = "0.8"
 

@@ -38,7 +38,7 @@ impl AudioPlayer {
 
     pub fn play_finished_sound() {
         Command::new("afplay")
-            .arg("assets/alarm.mp3")
+            .arg("assets/alarm2.wav")
             .spawn()
             .expect("Failed to play finished sound");
     }

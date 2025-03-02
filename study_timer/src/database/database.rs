@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{Datelike, Utc};
 use rusqlite::Connection;
 use std::io::{self, ErrorKind};
 pub struct DatabaseManager {
@@ -88,5 +88,37 @@ impl DatabaseManager {
 
     fn to_io_error(err: rusqlite::Error) -> io::Error {
         io::Error::new(ErrorKind::Other, format!("Database error: {}", err))
+    }
+
+    pub fn get_data(&self, weeks_ago: u32) -> io::Result<u64> {
+        // Get current date in UTC
+        let now = Utc::now();
+
+        // Find the most recent Monday
+        let days_since_monday = now.weekday().num_days_from_monday();
+        let this_monday = now - chrono::Duration::days(days_since_monday as i64);
+
+        // Calculate the start and end dates for the requested week
+        let start_date = this_monday - chrono::Duration::weeks(weeks_ago as i64);
+        let end_date = start_date + chrono::Duration::weeks(1);
+
+        // Format dates for SQLite query
+        let start_date_str = start_date.format("%Y-%m-%d").to_string();
+        let end_date_str = end_date.format("%Y-%m-%d").to_string();
+
+        // Prepare and execute query
+        let sql = "
+            SELECT COALESCE(SUM(duration), 0) as total_duration 
+            FROM timer_events 
+            WHERE date >= ?1 
+            AND date < ?2
+        ";
+
+        let total_duration: i64 = self
+            .conn
+            .query_row(sql, &[&start_date_str, &end_date_str], |row| row.get(0))
+            .map_err(DatabaseManager::to_io_error)?;
+
+        Ok(total_duration as u64)
     }
 }

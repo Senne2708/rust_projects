@@ -17,7 +17,12 @@ impl Timer {
         Self { duration }
     }
 
-    pub fn start(&self, display: &DisplayManager, audio: Arc<AudioPlayer>, database_manager: &DatabaseManager) -> io::Result<()> {
+    pub fn start(
+        &self,
+        display: &DisplayManager,
+        audio: Arc<AudioPlayer>,
+        database_manager: &DatabaseManager,
+    ) -> io::Result<()> {
         let duration = self.duration.clone();
         let audio_clone = Arc::clone(&audio);
 
@@ -27,7 +32,10 @@ impl Timer {
 
         self.countdown(display)?;
         rain_handle.join().unwrap();
-        let _ = database_manager.insert_data(duration.as_secs(), true);
+
+        let hours = duration.as_secs() as f64 / 3600.0;
+        let rounded_hours = hours.round() as u64;
+        let _ = database_manager.insert_data(rounded_hours, true);
 
         Ok(())
     }
